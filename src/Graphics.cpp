@@ -37,7 +37,7 @@ bool Graphics::OpenWindow() {
 }
 
 void Graphics::ClearScreen(Uint32 color) {
-    SDL_SetRenderDrawColor(renderer, color >> 16, color >> 8, color, color >> 24);
+    SDL_SetRenderDrawColor(renderer, color >> 16, color >> 8, color, 255);
     SDL_RenderClear(renderer);
 }
 
