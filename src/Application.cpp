@@ -12,14 +12,13 @@ bool Application::IsRunning() {
 void Application::Setup() {
     running = Graphics::OpenWindow();
 
-    Particle* particle = new Particle((int)(Graphics::Width() / 2), (int)(Graphics::Height() / 2), 1.0);
-    particle->radius = 15;
-    particles.push_back(particle);
+    this->anchor = Vec2(Graphics::Width() / 2.0, 30);
 
-   this->liquid.x = 0;
-   this->liquid.y = Graphics::Height() / 2;
-   this->liquid.w = Graphics::Width();
-   this->liquid.h = Graphics::Height() / 2;
+    for(int i = 0; i < this->NUM_OF_PARTICLES; ++i) {
+        Particle* bob = new Particle(this->anchor.x, this->anchor.y + (i * this->springRestLength), 2.0f);
+        bob->radius = 6;
+        this->particles.push_back(bob);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,63 +33,53 @@ void Application::Input() {
                 break;
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE)
-                    running = false;
+                    this->running = false;
                 if (event.key.keysym.sym == SDLK_UP) {
-                    pushForce.y = -50 * PIXELS_PER_METER;
+                    this->pushForce.y = -50 * PIXELS_PER_METER;
                 } else if (event.key.keysym.sym == SDLK_DOWN) {
-                    pushForce.y = 50 * PIXELS_PER_METER; 
+                    this->pushForce.y = 50 * PIXELS_PER_METER; 
                 } else if (event.key.keysym.sym == SDLK_LEFT) {
-                    pushForce.x = -50 * PIXELS_PER_METER;
+                    this->pushForce.x = -50 * PIXELS_PER_METER;
                 } else if (event.key.keysym.sym == SDLK_RIGHT) {
-                    pushForce.x = 50 * PIXELS_PER_METER;
+                    this->pushForce.x = 50 * PIXELS_PER_METER;
                 }  
                 break;
             case SDL_KEYUP:
                 if (event.key.keysym.sym == SDLK_UP) {
-                    pushForce.y = 0;
+                    this->pushForce.y = 0;
                 } else if (event.key.keysym.sym == SDLK_DOWN) {
-                    pushForce.y = 0; 
+                    this->pushForce.y = 0; 
                 } else if (event.key.keysym.sym == SDLK_LEFT) {
-                    pushForce.x = 0;
+                    this->pushForce.x = 0;
                 } else if (event.key.keysym.sym == SDLK_RIGHT) {
-                    pushForce.x = 0;
+                    this->pushForce.x = 0;
                 }   
                break;
 
             case SDL_MOUSEMOTION:
-                mouseCursor.x = event.motion.x;
-                mouseCursor.y = event.motion.y;
-            break;    
+                this->mouseCursor.x = event.motion.x;
+                this->mouseCursor.y = event.motion.y;
+                break;    
 
             case SDL_MOUSEBUTTONDOWN:
-                if(event.button.button == SDL_BUTTON_LEFT) {
-                    int x,  y;
-
-                    SDL_GetMouseState(&x, &y);
-
-                    // Add new particle
-                    Particle* particle = new Particle(x, y, 1.0f);
-                    particle->radius = 5;
-                    this->particles.push_back(particle);
-                } 
-
-                if (!leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
-                    leftMouseButtonDown = true;
+                if (!this->leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
+                    this->leftMouseButtonDown = true;
                     int x, y;
                     SDL_GetMouseState(&x, &y);
-                    mouseCursor.x = x;
-                    mouseCursor.y = y;
+                    this->mouseCursor.x = x;
+                    this->mouseCursor.y = y;
                 }
-            break;   
+               break;   
 
             case SDL_MOUSEBUTTONUP:
-                if (leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
-                    leftMouseButtonDown = false;
-                    Vec2 impulseDirection = (particles[0]->position - mouseCursor).UnitVector();
-                    float impulseMagnitude = (particles[0]->position - mouseCursor).Magnitude() * 5.0;
-                    particles[0]->velocity = impulseDirection * impulseMagnitude;
+                 if (this->leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
+                    int lastParticle = this->NUM_OF_PARTICLES - 1;
+                    this->leftMouseButtonDown = false;
+                    Vec2 impulseDirection = (this->particles[lastParticle]->position - this->mouseCursor).UnitVector();
+                    float impulseMagnitude = (this->particles[lastParticle]->position - this->mouseCursor).Magnitude() * 5.0;
+                    this->particles[lastParticle]->velocity = impulseDirection * impulseMagnitude;
                 }
-            break;
+               break;
         }
     }
 }
@@ -113,27 +102,31 @@ void Application::Update() {
    // Set time of current frame to be used in next one 
    timePreviousFrame = SDL_GetTicks();
 
-
-    // Update objects in scene
-    // apply wind force, weight to particle and add forces
+ 
     for(auto particle: this->particles) {
-        // Vec2 windForce = Vec2(static_cast<float>(0.2 * PIXELS_PER_METER), 0.0f);
-        // particle->addForce(windForce);
+         particle->addForce(pushForce);
 
-        // Vec2 weight = Vec2(0.0f, static_cast<float>(particle->mass * 9.8f * PIXELS_PER_METER));
-        // particle->addForce(weight);
-         // Apply a friction force
+        // Apply a drag force
+        Vec2 drag = Force::generateDragForce(*particle, 0.002);
+        particle->addForce(drag);
 
-        Vec2 frictionForce = Force::generateFrictionForce(*particle, 10.0 * PIXELS_PER_METER);
-        particle->addForce(frictionForce);
+        // Apply weight force
+        Vec2 weight = Vec2(0.0f, particle->mass * 9.8f * PIXELS_PER_METER);
+        particle->addForce(weight);
+    }
 
-        particle->addForce(this->pushForce);
+    // Apply spring force to particle connected to anchor
+    Vec2 springForce = Force::generateSpringForce(*this->particles[0], this->anchor, this->springRestLength, SPRING_CONSTANT);
+    this->particles[0]->addForce(springForce); 
 
-        // Apply a drag force if inside a liquid
-        if(particle->position.y >= this->liquid.y ) {
-            Vec2 daragForce = Force::generateDragForce(*particle, 0.02);
-            particle->addForce(daragForce);
-        }
+    // connect other particles with with spring
+    for(int i = 1; i < this->NUM_OF_PARTICLES; ++i) {
+        int currIdx = i;
+        int prevIdx = i - 1;
+
+        Vec2 springForce = Force::generateSpringForce(*this->particles[currIdx], *this->particles[prevIdx], this->springRestLength, SPRING_CONSTANT);
+        this->particles[currIdx]->addForce(springForce);
+        this->particles[prevIdx]->addForce(-springForce);
     }
 
     
@@ -165,19 +158,48 @@ void Application::Update() {
 // Render function (called several times per second to draw objects)
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Render() {
-    Graphics::ClearScreen(0x01FF0000);
+    Graphics::ClearScreen(0xFF0b2375);
 
     //Draw liquid
     // Graphics::DrawFillRect(this->liquid.x + this->liquid.w / 2, this->liquid.y + this->liquid.h / 2, this->liquid.w, this->liquid.h,  0xFF6E3713); 
 
     
-    if (leftMouseButtonDown) {
-        Graphics::DrawLine(particles[0]->position.x, particles[0]->position.y, mouseCursor.x, mouseCursor.y, 0xFF0000FF);
+    if (this->leftMouseButtonDown) {
+        int lastParticle = this->NUM_OF_PARTICLES - 1;
+        Graphics::DrawLine(
+            this->particles[lastParticle]->position.x, 
+            this->particles[lastParticle]->position.y, 
+            this->mouseCursor.x, this->mouseCursor.y, 
+            0xFF0000FF
+        );
     }
 
-    for(auto particle: this->particles) {
-        Graphics::DrawFillCircle(particle->position.x, particle->position.y, particle->radius, 0xFFFFFFFF);
+    // draw spring
+    Graphics::DrawLine(this->anchor.x, this->anchor.y, this->particles[0]->position.x, this->particles[0]->position.y, 0xFF313131);
+
+    // draw anchor
+    Graphics::DrawFillCircle(this->anchor.x, this->anchor.y, 5, 0xFF001155);
+
+    // draw remaining springs
+    for(int i = 0; i < this->NUM_OF_PARTICLES - 1; ++i) {
+        int currIdx = i;
+        int prevIdx = i + 1;
+
+        Graphics::DrawLine(
+            this->particles[currIdx]->position.x, 
+            this->particles[currIdx]->position.y, 
+            this->particles[prevIdx]->position.x, 
+            this->particles[prevIdx]->position.y, 
+            0xFF313131
+        );
     }
+
+
+    for(auto particle: this->particles) {
+        Graphics::DrawFillCircle((int)particle->position.x, (int)particle->position.y, particle->radius, 0xFFBBEE00);
+    }
+
+   
     
     Graphics::RenderFrame();
 }

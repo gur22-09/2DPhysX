@@ -28,7 +28,7 @@ void Particle::integrate(float dt) {
     this->velocity += this->acceleration * dt;
 
     this->position += this->velocity * dt +  (this->acceleration * 0.5) * dt * dt;
-
+  
     this->clearForces();
 }
 
