@@ -104,12 +104,18 @@ void Application::Update() {
         // Apply weight force
         Vec2 weight = Vec2(0.0f, Body->mass * 9.8f * PIXELS_PER_METER);
         Body->addForce(weight);
+
+        // Apply torque
+        float torque = 20.0f;
+        Body->addTorque(torque);
     }
 
     
     for(auto Body: this->bodies) {
-        // Integrate acceleration and velocity to find updated position and velocity
-        Body->integrate(deltaTime);
+        // Integrate for linear and angular motion
+        Body->integrateLinear(deltaTime);
+        Body->integrateAngular(deltaTime);
+        
 
         // confine Body within the boundary of the window
         // this is just a hack for now
@@ -142,16 +148,12 @@ void Application::Update() {
 void Application::Render() {
     Graphics::ClearScreen(0xFF0b2375);
     
-    static float angle = 0.0f;
-
     for(auto Body: this->bodies) {
         if(Body->shape->getType() == CIRCLE) {
             Circle* circle = dynamic_cast<Circle*>(Body->shape);
-            Graphics::DrawCircle((int)Body->position.x, (int)Body->position.y, circle->radius, angle, 0xFFBBEE00);
+            Graphics::DrawCircle((int)Body->position.x, (int)Body->position.y, circle->radius, Body->rotation, 0xFFBBEE00);
         }
     }
-
-    angle += 0.01f;
     
     Graphics::RenderFrame();
 }

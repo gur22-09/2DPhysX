@@ -12,6 +12,7 @@ struct Shape {
   virtual ~Shape() = default;
   virtual ShapeType getType() const = 0;
   virtual Shape* clone() const = 0;
+  virtual float getMomentOfInertia() const = 0;
 };
 
 struct Circle: public Shape {
@@ -23,6 +24,8 @@ struct Circle: public Shape {
     ShapeType getType() const override;
 
     Shape* clone() const override;
+
+    float getMomentOfInertia() const override;
 };
 
 struct Polygon: public Shape {
@@ -36,6 +39,8 @@ struct Polygon: public Shape {
     ShapeType getType() const override;
 
     Shape* clone() const override;
+
+    float getMomentOfInertia() const override;
 };
 
 struct Box: public Polygon {
@@ -48,4 +53,6 @@ struct Box: public Polygon {
     ShapeType getType() const override;
 
     Shape* clone() const override;
+
+    float getMomentOfInertia() const override;
 };
