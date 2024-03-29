@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Vec2.h"
+#include "Shape.h"
 
-struct Particle {
-    int radius;
-
+struct Body {
     Vec2 position;
     Vec2 velocity;
     Vec2 acceleration;
@@ -13,9 +12,11 @@ struct Particle {
     float mass;
     float invMass;
 
-    Particle(float x, float y, float mass);
+    Shape* shape = nullptr;    
 
-    ~Particle();
+    Body(const Shape& shape, float x, float y, float mass);
+
+    ~Body();
 
     void integrate(float dt);
 

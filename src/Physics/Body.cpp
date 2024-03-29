@@ -1,8 +1,9 @@
 #include <iostream>
-#include "Particle.h"
+#include "Body.h"
 
 
-Particle::Particle(float x, float y, float mass) {
+Body::Body(const Shape& shape, float x, float y, float mass) {
+    this->shape = shape.clone();
     this->position = Vec2(x, y);
     this->mass = mass;
 
@@ -12,30 +13,31 @@ Particle::Particle(float x, float y, float mass) {
         this->invMass = 0;
     }
 
-    std::cout << "Particle constructed" << "\n";
+    std::cout << "Body constructed" << "\n";
 }
 
 
-Particle::~Particle() {
-    std::cout << "Particle destroyed" << "\n";
+Body::~Body() {
+    delete shape;
+    std::cout << "Body destroyed" << "\n";
 }
 
-void Particle::integrate(float dt) {
+void Body::integrate(float dt) {
     // figure the acceleration based on applied force
     this->acceleration = this->sumForces * this->invMass;
 
     // integrate to find velocity
     this->velocity += this->acceleration * dt;
 
-    this->position += this->velocity * dt +  (this->acceleration * 0.5) * dt * dt;
+    this->position += this->velocity * dt;
   
     this->clearForces();
 }
 
-void Particle::addForce(const Vec2& force) {
+void Body::addForce(const Vec2& force) {
     this->sumForces += force;
 }
 
-void Particle::clearForces() {
+void Body::clearForces() {
     this->sumForces = Vec2(0.0f, 0.0f);
 }
