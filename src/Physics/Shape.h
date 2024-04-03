@@ -2,20 +2,23 @@
 #include <vector>
 #include "./Vec2.h"
 
-enum ShapeType {
+enum ShapeType
+{
     CIRCLE,
     POLYGON,
     BOX
 };
 
-struct Shape {
-  virtual ~Shape() = default;
-  virtual ShapeType getType() const = 0;
-  virtual Shape* clone() const = 0;
-  virtual float getMomentOfInertia() const = 0;
+struct Shape
+{
+    virtual ~Shape() = default;
+    virtual ShapeType getType() const = 0;
+    virtual Shape *clone() const = 0;
+    virtual float getMomentOfInertia() const = 0;
 };
 
-struct Circle: public Shape {
+struct Circle : public Shape
+{
     float radius;
     Circle(const float radius);
 
@@ -23,14 +26,16 @@ struct Circle: public Shape {
 
     ShapeType getType() const override;
 
-    Shape* clone() const override;
+    Shape *clone() const override;
 
     float getMomentOfInertia() const override;
 };
 
-struct Polygon: public Shape {
-    std::vector<Vec2> vertices;
-    
+struct Polygon : public Shape
+{
+    std::vector<Vec2> localVertices;
+    std::vector<Vec2> worldVertices;
+
     Polygon() = default;
     Polygon(const std::vector<Vec2> vertices);
 
@@ -38,12 +43,15 @@ struct Polygon: public Shape {
 
     ShapeType getType() const override;
 
-    Shape* clone() const override;
+    Shape *clone() const override;
 
     float getMomentOfInertia() const override;
+
+    void updateVertices(float angle, const Vec2 &position);
 };
 
-struct Box: public Polygon {
+struct Box : public Polygon
+{
     float width;
     float height;
 
@@ -52,7 +60,7 @@ struct Box: public Polygon {
 
     ShapeType getType() const override;
 
-    Shape* clone() const override;
+    Shape *clone() const override;
 
     float getMomentOfInertia() const override;
 };
