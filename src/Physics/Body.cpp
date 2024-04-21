@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 #include "Body.h"
 
 Body::Body(const Shape &shape, float x, float y, float mass)
@@ -46,6 +47,9 @@ Body::~Body()
 
 void Body::integrateLinear(float dt)
 {
+    if(Body::isStatic()) {
+        return;
+    }
     // figure the acceleration based on applied force
     this->acceleration = this->sumForces * this->invMass;
 
@@ -59,6 +63,9 @@ void Body::integrateLinear(float dt)
 
 void Body::integrateAngular(float dt)
 {
+    if(Body::isStatic()) {
+        return;
+    }
     // figure the angular acceleration based on torque
     this->angularAcceleration = this->sumTorque * this->invI;
 
@@ -103,4 +110,9 @@ void Body::update(float dt)
         Polygon *polygon = dynamic_cast<Polygon *>(this->shape);
         polygon->updateVertices(this->rotation, this->position);
     }
+}
+
+bool Body::isStatic() const {
+    const float epsilon = 0.005f;
+    return fabs(this->invI - 0.0f)  < epsilon; 
 }

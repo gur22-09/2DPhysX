@@ -4,6 +4,7 @@
 #include "Shape.h"
 
 struct Body {
+    bool isColliding;
     // linear motion variables
     Vec2 position;
     Vec2 velocity;
@@ -31,6 +32,8 @@ struct Body {
     void integrateLinear(float dt);
     void integrateAngular(float dt);
     void update(float dt);
+    bool isStatic() const;
+
 
     void addForce(const Vec2& force);
     void addTorque(float torque);
